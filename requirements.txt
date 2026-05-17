@@ -1,0 +1,4 @@
+# NTRO TWEAKS FREE uses only the Python standard library.
+# Optional EXE packaging on Windows:
+#   py -3 -m pip install pyinstaller
+#   py -3 -m PyInstaller --onefile --windowed --name "NTRO TWEAKS FREE" src\ntro_tweaks_free.py
