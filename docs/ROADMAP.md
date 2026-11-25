@@ -4,7 +4,7 @@ Each release is usable on its own. Status is updated as work lands.
 
 | Release | Contents | Status |
 |---|---|---|
-| **0.1** | Repo cleanup, CMake + Qt shell, journal + undo, restore-point gate, `VNMHelper`, Game Mode end to end, CI artifact | **Shipped in code; awaiting first green Windows build** |
+| **0.1** | Repo cleanup, CMake + Qt shell, journal + undo, restore-point gate, `VNMHelper`, Game Mode end to end, CI artifact | **Built and tested in CI** (Linux + Windows jobs green, unsigned artifact published). Awaiting the manual checklist on a real Windows 11 machine. |
 | 0.2 | Rest of Windows Performance (power plan, visual effects, per-app fullscreen optimisation, mouse acceleration, HAGS), system info, diagnostics export | Planned |
 | 0.3 | Measurement: PresentMon capture, A/B runner, report card with a real noise floor; GPU and Network modules | Planned |
 | 0.4 | Game Booster: background consumer audit, suspend/resume, priority, dGPU preference, measured before/after | Planned |
