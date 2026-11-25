@@ -1,0 +1,24 @@
+# Build output
+build/
+out/
+dist/
+CMakeUserPresets.json
+compile_commands.json
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Python (legacy app only)
+__pycache__/
+*.pyc
+
+# Local installs
+/Qt/

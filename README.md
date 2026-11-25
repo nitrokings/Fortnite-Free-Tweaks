@@ -1,51 +1,69 @@
-# NTRO TWEAKS FREE
+# VNM TWEAKS
 
-A clean Windows desktop application focused on safe, reversible Fortnite and system optimization guidance.
+A Windows 11 game-performance app for people on modest PCs, built around one promise:
 
-## Safety promise
+> **Every change is inspectable before it happens, recorded when it happens, and reversible afterwards. Nothing is claimed that was not measured.**
 
-NTRO TWEAKS FREE only includes legitimate performance settings, transparent system tools, and user-controlled toggles. It does **not** include cheats, macros, aim assist, gameplay automation, driver injection, hidden registry hacks, unsafe network stack changes, or forced Fortnite configuration edits.
+Nothing in VNM TWEAKS reads game memory, injects code, automates input, edits game files or touches network traffic to game servers. It only changes documented Windows settings, one at a time, through a single journaled path.
 
-Before any system-level action, the app asks:
+## Status: release 0.1
 
-> Do you want to create a Windows restore point before applying tweaks?
+This is the first C++ release, and it is deliberately small. It exists to prove the whole pipeline works on a real machine:
 
-Choosing **Yes** runs Windows restore point creation through `Checkpoint-Computer`. Choosing **No** continues only after a warning.
+| Piece | State |
+|---|---|
+| Qt 6 desktop shell with the module sidebar | Done |
+| Change journal (JSONL, hash-chained) with per-item undo | Done |
+| Restore-point gate (blocks writes, never blocks launch) | Done |
+| `VNMHelper` - the only process that writes anything, allowlist-validated | Done |
+| **Windows Performance -> Game Mode** - detect, preview, apply, undo | Done, the only real tweak |
+| Unit tests + CI on Windows and Linux | Done |
+| GPU, Network, Input, Games, Booster, Security Centre, Monitor, Cleanup, Presets, Aim Trainer | **Not built yet** - the pages say so and have no Apply button |
 
-## Sections
+The previous Python prototype lives in `legacy/` for reference only. It is not maintained and not shipped.
 
-- **Fortnite Tweaks**: Performance Mode, fullscreen guidance, shadows, low/medium/competitive presets, motion blur, view distance, competitive preset preview, and reset guide.
-- **Windows Performance**: Game Mode, startup apps review, background app review, power plan selector, and visual effects mode.
-- **GPU Settings Guide**: NVIDIA Low Latency Mode, V-Sync, power management, texture filtering, and a competitive GPU preset preview.
-- **Network Optimization**: DNS selector guidance, Ethernet/Wi-Fi tips, packet loss checklist, and ping stability checklist. No `netsh` or network stack modifications are used.
-- **Input Responsiveness**: Enhance pointer precision guidance, DPI range, polling rate info, USB power saving guidance, and fullscreen optimization guide. No macros or automation.
-- **Performance Monitor**: Lightweight CPU/RAM monitor, GPU/temperature availability notes, and a non-intrusive FPS-to-frame-time graph helper.
-- **System Cleanup**: User temp cleaner, storage analyzer concept, Fortnite cache cleanup guide, and browser cache instructions.
-- **Presets**: Potato Mode, Balanced Mode, and Competitive Mode, each previewed before applying.
+## How to get a build
 
-## Run from source
+You do not need a C++ toolchain. Every push builds the app on GitHub Actions:
 
-```bat
-py -3 src\ntro_tweaks_free.py
+1. Open the **Actions** tab, pick the latest `build` run.
+2. Download the **VNMTweaks-0.1.0-windows-x64** artifact.
+3. Unzip it somewhere you can write to (not `C:\Program Files`) and run `VNMTweaks.exe`.
+
+The binary is **unsigned** in 0.1, so SmartScreen will warn. Choose "More info" -> "Run anyway" *only* if you downloaded it from this repository's Actions page.
+
+## How the safety model works
+
+- **Detect before write.** The app reads the current value and shows it before anything changes.
+- **Restore point gate.** Before the first change of a session, `VNMHelper` creates a Windows restore point. Windows allows only one per 24 hours, so an existing point from today satisfies the gate. If System Protection is off, the app offers to enable it. Read-only features always open; only writes are gated.
+- **Journal.** Every change appends a line recording the target, the exact previous value and the new one. The lines are hash-chained, so an edited or truncated journal is detectable.
+- **Undo.** Restoring uses the journal, not System Restore, so a single item can be undone months later.
+- **Allowlist.** The helper compares every requested change against a compiled-in catalogue of legal targets and refuses anything else.
+
+## Building it yourself (optional)
+
+Requires CMake 3.24+, a C++20 compiler, and Qt 6.5+ if you want the GUI.
+
+```bash
+cmake -S . -B build -DVNM_BUILD_GUI=OFF   # core + tests only
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
 ```
 
-Or double-click:
+For the full app on Windows, install Qt 6.8 (MSVC 2022 64-bit) and configure without `-DVNM_BUILD_GUI=OFF`.
 
-```bat
-tools\run_ntro_tweaks_free.bat
+## Layout
+
+```
+src/core        pure C++20 logic: journal, gate, plan validation, the tweak itself
+src/platform    the only place that touches Windows APIs
+src/helper      VNMHelper.exe - apply, undo, restore points
+src/app         Qt 6 Widgets front end
+tests           unit tests (no third-party test framework)
+docs            architecture, roadmap, decisions
+legacy          the retired Python prototype
 ```
 
-The app uses only the Python standard library.
+## Licence
 
-## Build a Windows EXE
-
-This repository includes Python source that can be packaged on Windows with PyInstaller:
-
-```bat
-py -3 -m pip install pyinstaller
-py -3 -m PyInstaller --onefile --windowed --name "NTRO TWEAKS FREE" src\ntro_tweaks_free.py
-```
-
-The resulting executable will be created under `dist\NTRO TWEAKS FREE.exe`.
-
-> Note: the current Linux container does not have PyInstaller or a Windows cross-compiler installed, so the EXE cannot be rebuilt here. Existing legacy `FortniteOptimizer.exe` artifacts are left untouched.
+GPL-3.0. See [LICENSE](LICENSE). Qt is used under the LGPLv3 and is dynamically linked.

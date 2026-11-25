@@ -1,0 +1,73 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux-core:
+    name: Core tests (Linux, gcc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DVNM_BUILD_GUI=OFF -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  windows-app:
+    name: Windows app (MSVC + Qt 6)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Deploy the Qt runtime next to the binaries
+        run: >
+          windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw
+          build/Release/VNMTweaks.exe build/Release/VNMHelper.exe
+
+      - name: Package the unsigned build
+        shell: pwsh
+        run: |
+          $version = "0.1.0"
+          $name = "VNMTweaks-$version-windows-x64"
+          Compress-Archive -Path build/Release/* -DestinationPath "$name.zip"
+          Write-Output "Packaged $name.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VNMTweaks-0.1.0-windows-x64
+          path: VNMTweaks-0.1.0-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Summarise
+        shell: pwsh
+        run: |
+          Add-Content $env:GITHUB_STEP_SUMMARY '### VNM TWEAKS 0.1.0'
+          Add-Content $env:GITHUB_STEP_SUMMARY ''
+          Add-Content $env:GITHUB_STEP_SUMMARY 'Unsigned build. Download the artifact below, unzip it somewhere user-writable, and run `VNMTweaks.exe`.'
+          Add-Content $env:GITHUB_STEP_SUMMARY 'Windows SmartScreen will warn because the binary is not code-signed yet - that is expected for 0.1.'
